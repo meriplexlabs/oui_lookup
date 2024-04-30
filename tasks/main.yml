@@ -1,0 +1,25 @@
+---
+- name: Read MAC addresses from file
+  ansible.builtin.slurp:
+    src: "{{ input_file }}"
+  register: mac_file_content
+
+- name: Decode MAC addresses file content
+  set_fact:
+    mac_addresses: "{{ (mac_file_content['content'] | b64decode).split('\n') | map('trim') | list }}"
+  when: mac_file_content['content'] is defined
+
+- name: Ensure output file exists
+  ansible.builtin.file:
+    path: "{{ output_file }}"
+    state: touch
+    mode: '0664'
+
+- name: Query MAC Vendor Lookup API and write specific result
+  shell: |
+    result=$(curl -s "https://api.maclookup.app/v2/macs/{{ (item | replace(':', '')) }}" | jq -r '.company // "No company found"')
+    echo "{{ item | replace(':', '') }}: ${result}" >> "{{ output_file }}"
+    sleep 0.5
+  loop: "{{ mac_addresses }}"
+  when: item | length > 0
+  ignore_errors: true
