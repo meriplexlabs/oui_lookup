@@ -1,3 +1,0 @@
----
-input_file: '{{ role_path }}/mac_addresses.yml'
-output_file: '{{ role_path }}/oui-lookup-results.yml'
